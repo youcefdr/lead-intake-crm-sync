@@ -1,0 +1,7 @@
+{
+  "uid": "lead_intake_crm_hubspot_app_settings",
+  "type": "settings",
+  "config": {
+    "entrypoint": "/app/settings/SettingsPage.tsx"
+  }
+}
