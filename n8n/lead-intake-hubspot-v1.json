@@ -1,0 +1,138 @@
+{
+  "name": "Lead Intake → HubSpot CRM - v1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3898a928-cbf2-4860-ba9d-67eb1d45ad71",
+      "name": "Webhook",
+      "webhookId": "003ea72e-b1e9-4c56-9387-d1bcb4d0298c"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "31c57060-7503-4512-92de-d4edebbda720",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "9f08f531-6870-4a8e-9dca-ef360f8c6620",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e4bff757-0c66-4e5d-baf3-c0cc8c235063",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"firstname\": \"{{$json.body.first_name}}\",\n    \"lastname\": \"{{$json.body.last_name}}\",\n    \"email\": \"{{$json.body.email}}\",\n    \"phone\": \"{{$json.body.phone}}\",\n    \"company\": \"{{$json.body.company}}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        -96
+      ],
+      "id": "46b69c6a-2243-4fb1-b9b3-96bbc80a6733",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "Bo7VdgVRyofDS7Vk",
+          "name": "HubSpot Service Key - Lead Intake v1"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "acbb400d-0e9b-4466-8bd3-db95fecf3698",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "de166e8510f9ce5471cd93f1471d6b43162740dc512e143d5a0187a4d6dbd6ee"
+  },
+  "nodeGroups": [],
+  "id": "AfbDqAkzmGfHI9i6",
+  "tags": []
+}
