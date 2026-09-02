@@ -10,8 +10,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        -448,
+        -16
       ],
       "id": "3898a928-cbf2-4860-ba9d-67eb1d45ad71",
       "name": "Webhook",
@@ -54,11 +54,46 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        208,
-        0
+        -160,
+        -16
       ],
       "id": "e4bff757-0c66-4e5d-baf3-c0cc8c235063",
       "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"filterGroups\": [\n    {\n      \"filters\": [\n        {\n          \"propertyName\": \"email\",\n          \"operator\": \"EQ\",\n          \"value\": \"{{$json.body.email}}\"\n        }\n      ]\n    }\n  ],\n  \"properties\": [\n    \"firstname\",\n    \"lastname\",\n    \"email\",\n    \"hs_object_id\"\n  ],\n  \"limit\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        64,
+        -480
+      ],
+      "id": "8555e19f-2120-4f1c-b749-6b56c553da15",
+      "name": "Search Contact by Email",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "Bo7VdgVRyofDS7Vk",
+          "name": "HubSpot Service Key - Lead Intake v1"
+        }
+      }
     },
     {
       "parameters": {
@@ -77,17 +112,85 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"properties\": {\n    \"firstname\": \"{{$json.body.first_name}}\",\n    \"lastname\": \"{{$json.body.last_name}}\",\n    \"email\": \"{{$json.body.email}}\",\n    \"phone\": \"{{$json.body.phone}}\",\n    \"company\": \"{{$json.body.company}}\"\n  }\n}",
+        "jsonBody": "=firstname:\n{{$('Webhook').item.json.body.first_name}}\n\nlastname:\n{{$('Webhook').item.json.body.last_name}}\n\nemail:\n{{$('Webhook').item.json.body.email}}\n\nphone:\n{{$('Webhook').item.json.body.phone}}\n\ncompany:\n{{$('Webhook').item.json.body.company}}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        416,
-        -96
+        592,
+        -336
       ],
       "id": "46b69c6a-2243-4fb1-b9b3-96bbc80a6733",
-      "name": "HTTP Request",
+      "name": "Create Contact",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "Bo7VdgVRyofDS7Vk",
+          "name": "HubSpot Service Key - Lead Intake v1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ccf000f1-abe8-40b3-8095-0e7a931a21ea",
+              "leftValue": "={{ $json.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        -480
+      ],
+      "id": "27ec9bfc-7d2c-448d-8ddb-cfcf190de989",
+      "name": "Contact Exists?"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/{{ $('Search Contact by Email').item.json.results[0].id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    properties: Object.fromEntries(\n      Object.entries({\n        firstname: $('Webhook').item.json.body.first_name,\n        lastname: $('Webhook').item.json.body.last_name,\n        phone: $('Webhook').item.json.body.phone,\n        company: $('Webhook').item.json.body.company\n      }).filter(([_, value]) => value !== undefined && value !== null && String(value).trim() !== '')\n    )\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        592,
+        -592
+      ],
+      "id": "dc08b171-993e-4101-b0de-fe6de23d52ea",
+      "name": "Update Contact",
       "credentials": {
         "httpBearerAuth": {
           "id": "Bo7VdgVRyofDS7Vk",
@@ -113,7 +216,36 @@
       "main": [
         [
           {
-            "node": "HTTP Request",
+            "node": "Search Contact by Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Exists?": {
+      "main": [
+        [
+          {
+            "node": "Update Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Contact by Email": {
+      "main": [
+        [
+          {
+            "node": "Contact Exists?",
             "type": "main",
             "index": 0
           }
@@ -127,7 +259,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "acbb400d-0e9b-4466-8bd3-db95fecf3698",
+  "versionId": "b46ccd7e-49a2-410c-848c-c530b9293a1d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "de166e8510f9ce5471cd93f1471d6b43162740dc512e143d5a0187a4d6dbd6ee"

@@ -28,17 +28,12 @@ Build an automation workflow that receives a new lead via HTTP webhook, validate
 
 ### Out of Scope for v1
 
-
-
 - OAuth 2.0
-
-- Duplicate detection and update logic
-
 - Retry and rate-limit handling
-
 - HubSpot inbound webhooks
-
 - Docker and Cloud deployment
+- Lead message history and HubSpot Notes
+- Advanced conflict resolution between source systems
 ## 3. Data Contract
 
 The webhook accepts a JSON object representing a lead.
@@ -68,15 +63,28 @@ The webhook accepts a JSON object representing a lead.
 ```
 ## 4. Identity & Create/Update Rules
 
-For v1, every valid lead is treated as a new contact and sent to HubSpot for creation.
+The lead email is used as the initial identity key for contact matching.
 
-The lead email is reserved as the identity key for the future deduplication phase.
+For v1:
 
-In a later phase:
-- If a contact with the same email exists, update the existing contact.
-- If no contact exists, create a new contact.
+- If no contact matches the email, create a new HubSpot contact.
+- If a contact matches the email, update the existing contact.
+- The HubSpot Contact ID returned by the search is used for the update operation.
+- Email is used for matching and is not changed automatically during an update.
 
-For v1, no duplicate detection or update operation is performed.
+### Partial Update Policy
+
+Only non-empty values are sent to the HubSpot update request.
+
+- `first_name`, `last_name`, `phone`, and `company` are updated when a valid non-empty value is received.
+- Missing fields, `null`, and empty strings do not overwrite existing HubSpot values.
+- Clearing an existing value is not supported implicitly and requires an explicit operation in a future phase.
+
+### Future Identity Improvements
+
+Email is a practical initial matching key, but it is not a permanent identity.
+
+Future versions may introduce an external lead ID or another stable identifier and persist the HubSpot Contact ID for subsequent synchronizations.
 ## 5. Error Behavior
 
 - Invalid or missing email → reject the request and return a validation error.
@@ -93,17 +101,26 @@ For v1, no duplicate detection or update operation is performed.
 | 4 | Invalid JSON payload | Request is rejected |
 | 5 | HubSpot API failure | No contact is created and the failure is recorded |
 | 6 | Request timeout | Failure is recorded; retry is deferred to a later phase |
+| 7 | Existing contact with changed fields | Existing contact is updated without creating a duplicate |
+| 8 | Existing contact with empty optional fields | Existing values are preserved |
 
 ## 7. Basic Flow
 
 ```text
-Postman
-   ↓ HTTP POST
+Postman / Lead Source
+       ↓ HTTP POST
 n8n Webhook
-   ↓
-Validate email
-   ↓
-HubSpot Create Contact
-   ↓
-Return success response
+       ↓
+Validate Email
+       ↓
+Search HubSpot Contact by Email
+       ↓
+Contact Exists?
+      ↙         ↘
+    No           Yes
+    ↓             ↓
+Create Contact   Update Contact
+      \           /
+       \         /
+        Return Result
 ```
