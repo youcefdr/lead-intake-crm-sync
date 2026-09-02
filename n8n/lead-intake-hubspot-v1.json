@@ -5,13 +5,14 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "lead-intake",
+        "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
         -448,
-        -16
+        -576
       ],
       "id": "3898a928-cbf2-4860-ba9d-67eb1d45ad71",
       "name": "Webhook",
@@ -54,8 +55,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -160,
-        -16
+        -224,
+        -576
       ],
       "id": "e4bff757-0c66-4e5d-baf3-c0cc8c235063",
       "name": "If"
@@ -83,8 +84,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        64,
-        -480
+        0,
+        -672
       ],
       "id": "8555e19f-2120-4f1c-b749-6b56c553da15",
       "name": "Search Contact by Email",
@@ -93,7 +94,8 @@
           "id": "Bo7VdgVRyofDS7Vk",
           "name": "HubSpot Service Key - Lead Intake v1"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -112,14 +114,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "=firstname:\n{{$('Webhook').item.json.body.first_name}}\n\nlastname:\n{{$('Webhook').item.json.body.last_name}}\n\nemail:\n{{$('Webhook').item.json.body.email}}\n\nphone:\n{{$('Webhook').item.json.body.phone}}\n\ncompany:\n{{$('Webhook').item.json.body.company}}",
+        "jsonBody": "={\n  \"properties\": {\n    \"firstname\": \"{{ $('Webhook').item.json.body.first_name }}\",\n    \"lastname\": \"{{ $('Webhook').item.json.body.last_name }}\",\n    \"email\": \"{{ $('Webhook').item.json.body.email }}\",\n    \"phone\": \"{{ $('Webhook').item.json.body.phone }}\",\n    \"company\": \"{{ $('Webhook').item.json.body.company }}\"\n  }\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        592,
-        -336
+        352,
+        -832
       ],
       "id": "46b69c6a-2243-4fb1-b9b3-96bbc80a6733",
       "name": "Create Contact",
@@ -128,7 +130,8 @@
           "id": "Bo7VdgVRyofDS7Vk",
           "name": "HubSpot Service Key - Lead Intake v1"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -157,8 +160,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        320,
-        -480
+        160,
+        -1024
       ],
       "id": "27ec9bfc-7d2c-448d-8ddb-cfcf190de989",
       "name": "Contact Exists?"
@@ -186,8 +189,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        592,
-        -592
+        352,
+        -1040
       ],
       "id": "dc08b171-993e-4101-b0de-fe6de23d52ea",
       "name": "Update Contact",
@@ -196,7 +199,59 @@
           "id": "Bo7VdgVRyofDS7Vk",
           "name": "HubSpot Service Key - Lead Intake v1"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"error\": \"Invalid or missing email\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        -480
+      ],
+      "id": "704fc7fe-0646-4cef-8d50-016c2292658d",
+      "name": "Validation Error Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Lead synchronized successfully\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        720,
+        -944
+      ],
+      "id": "31dd510a-3fab-437e-827d-35e91893004e",
+      "name": "Success Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"error\": \"CRM service error\"\n}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        720,
+        -656
+      ],
+      "id": "477f8596-a268-4d3b-8224-10194006b00b",
+      "name": "CRM Error Response"
     }
   ],
   "pinData": {},
@@ -217,6 +272,13 @@
         [
           {
             "node": "Search Contact by Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error Response",
             "type": "main",
             "index": 0
           }
@@ -249,6 +311,49 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "CRM Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Contact": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CRM Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contact": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CRM Error Response",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }
@@ -259,7 +364,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "b46ccd7e-49a2-410c-848c-c530b9293a1d",
+  "versionId": "8385d845-a804-438a-ab54-225b1f50daec",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "de166e8510f9ce5471cd93f1471d6b43162740dc512e143d5a0187a4d6dbd6ee"

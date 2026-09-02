@@ -34,6 +34,7 @@ Build an automation workflow that receives a new lead via HTTP webhook, validate
 - Docker and Cloud deployment
 - Lead message history and HubSpot Notes
 - Advanced conflict resolution between source systems
+
 ## 3. Data Contract
 
 The webhook accepts a JSON object representing a lead.
@@ -85,12 +86,76 @@ Only non-empty values are sent to the HubSpot update request.
 Email is a practical initial matching key, but it is not a permanent identity.
 
 Future versions may introduce an external lead ID or another stable identifier and persist the HubSpot Contact ID for subsequent synchronizations.
+
 ## 5. Error Behavior
 
-- Invalid or missing email → reject the request and return a validation error.
-- HubSpot authentication or authorization failure → return a CRM error without creating the contact.
-- HubSpot server error → return a CRM error and record the failure.
-- Timeout → record the failure; retry logic is deferred to a later phase.
+The workflow returns explicit HTTP responses for validation, success, and CRM failures.
+
+### Validation Errors
+
+- Missing email → HTTP 400
+- Invalid email format → HTTP 400
+
+Response example:
+
+```json
+{
+  "success": false,
+  "error": "Invalid or missing email"
+}
+```
+
+### Successful Synchronization
+
+If the lead passes validation and HubSpot synchronization succeeds, the workflow returns HTTP 200.
+
+This applies to both:
+
+- Contact creation
+- Contact update
+
+Response example:
+
+```json
+{
+  "success": true,
+  "message": "Lead synchronized successfully"
+}
+```
+
+### HubSpot / CRM Errors
+
+Errors returned by HubSpot are routed through a shared CRM error path instead of stopping the workflow without a response.
+
+The following HubSpot operations use dedicated error outputs:
+
+- Search Contact by Email
+- Create Contact
+- Update Contact
+
+If one of these operations fails, the workflow returns HTTP 502.
+
+Response example:
+
+```json
+{
+  "success": false,
+  "error": "CRM service error"
+}
+```
+
+HTTP 502 is used because the incoming request may be valid, but the external CRM service failed to process the operation successfully.
+
+### Deferred Error Handling
+
+The following behaviors are not implemented in v1 and are deferred to a later phase:
+
+- Automatic retries
+- Rate-limit handling
+- Backoff strategy
+- Persistent failure logging
+- Dead-letter or recovery workflow
+
 ## 6. Test Cases
 
 | # | Scenario | Expected Result |
