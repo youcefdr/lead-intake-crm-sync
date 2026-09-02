@@ -96,8 +96,22 @@ Secrets and tokens should be stored in credential stores, environment variables,
 
 ## 10. Current Integration State
 
-OAuth has been validated independently.
+## 10. Current Integration State
 
-The production n8n workflow has not yet been migrated from the HubSpot Service Key to OAuth.
+OAuth has been validated independently and integrated into a dedicated n8n test workflow.
 
-The next phase is OAuth integration with n8n while preserving the existing Service Key workflow as a known-good fallback.
+The following HubSpot operations were tested successfully through OAuth:
+
+- Search contact by email
+- Create contact
+- Update contact
+
+All tested operations returned successful responses from HubSpot.
+
+The original Service Key workflow remains unchanged as a known-good fallback.
+
+The OAuth-enabled workflow is exported separately as:
+
+```text
+n8n/lead-intake-hubspot-oauth-v1.json
+```
