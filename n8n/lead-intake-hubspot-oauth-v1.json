@@ -280,7 +280,7 @@
         336
       ],
       "id": "19294d31-b5ac-4a5c-9b97-74a9f5b3d1ae",
-      "name": "CRM Error Response1"
+      "name": "Search Error Response"
     }
   ],
   "pinData": {},
@@ -325,7 +325,7 @@
         ],
         [
           {
-            "node": "CRM Error Response1",
+            "node": "Search Error Response",
             "type": "main",
             "index": 0
           }
@@ -393,7 +393,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "6439db98-c415-43be-9ef2-4724fdd6501f",
+  "versionId": "5aef338a-5268-4bf6-a1dd-63fe4cd5c4f8",
   "meta": {
     "instanceId": "de166e8510f9ce5471cd93f1471d6b43162740dc512e143d5a0187a4d6dbd6ee"
   },
