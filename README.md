@@ -51,6 +51,24 @@ Create Contact   Update Contact
 
 HubSpot API requests are authenticated using OAuth 2.0.
 
+## Screenshots
+
+### Workflow Overview
+
+![n8n workflow overview](docs/screenshots/workflow-overview.png)
+
+### Successful API Request
+
+![Postman successful lead synchronization](docs/screenshots/postman-success.png)
+
+### HubSpot Contact Record
+
+![HubSpot contact created and synchronized](docs/screenshots/hubspot-contact.png)
+
+### OAuth Connection
+
+![HubSpot OAuth connection in n8n](docs/screenshots/oauth-connected.png)
+
 ## Features
 
 * HTTP webhook lead intake
