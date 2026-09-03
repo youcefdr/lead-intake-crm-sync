@@ -6,8 +6,9 @@
 
 
 
-Build an automation workflow that receives a new lead via HTTP webhook, validates the required email field, and creates the lead as a contact in HubSpot.
+Build an automation workflow that receives lead data through an HTTP webhook, validates the required email field, synchronizes the lead with HubSpot using search/create/update logic, prevents duplicate contacts based on email, and returns explicit HTTP responses for successful and failed operations.
 
+HubSpot API access is authenticated through OAuth 2.0.
 
 
 ## 2. Scope / Out of Scope
@@ -19,21 +20,25 @@ Build an automation workflow that receives a new lead via HTTP webhook, validate
 
 
 - Receive a lead through an HTTP webhook.
-
 - Validate the required email field.
-
-- Create a contact in HubSpot.
-
+- Search HubSpot contacts by email.
+- Create a contact when no match exists.
+- Update an existing contact when the email already exists.
+- Prevent duplicate contact creation through email-based matching.
+- Preserve existing HubSpot values during partial updates when optional fields are missing or empty.
+- Return explicit HTTP responses for validation, synchronization success, and CRM failures.
+- Authenticate HubSpot API requests using OAuth 2.0.
 
 
 ### Out of Scope for v1
 
-- OAuth 2.0
 - Retry and rate-limit handling
 - HubSpot inbound webhooks
 - Docker and Cloud deployment
 - Lead message history and HubSpot Notes
 - Advanced conflict resolution between source systems
+- Persistent business/execution logging
+- Monitoring and alerting
 
 ## 3. Data Contract
 
@@ -41,13 +46,15 @@ The webhook accepts a JSON object representing a lead.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `first_name` | string | Yes | Lead first name |
-| `last_name` | string | Yes | Lead last name |
-| `email` | string | Yes | Lead email; reserved as the identity key for the later deduplication phase |
+| `first_name` | string | No | Lead first name |
+| `last_name` | string | No | Lead last name |
+| `email` | string | Yes | Lead email; used as the identity key for contact matching and deduplication in v1 |
 | `phone` | string | No | Lead phone number |
 | `company` | string | No | Lead company |
 | `source` | string | No | Lead source |
 | `message` | string | No | Lead message or inquiry |
+
+`source` and `message` may be accepted in the inbound payload but are not synchronized to HubSpot in v1.
 
 ### Example Payload
 
@@ -164,15 +171,15 @@ The following behaviors are not implemented in v1 and are deferred to a later ph
 | 2 | Missing email | Request is rejected with a validation error |
 | 3 | Invalid email format | Request is rejected with a validation error |
 | 4 | Invalid JSON payload | Request is rejected |
-| 5 | HubSpot API failure | No contact is created and the failure is recorded |
-| 6 | Request timeout | Failure is recorded; retry is deferred to a later phase |
-| 7 | Existing contact with changed fields | Existing contact is updated without creating a duplicate |
-| 8 | Existing contact with empty optional fields | Existing values are preserved |
+| 5 | HubSpot API failure | HTTP 502 CRM error response is returned |
+| 6 | Existing contact with changed fields | Existing contact is updated without creating a duplicate |
+| 7 | Existing contact with empty optional fields | Existing values are preserved |
+| 8 | OAuth-authenticated CRM synchronization | Search, create, and update operations succeed through OAuth 2.0 |
 
 ## 7. Basic Flow
 
 ```text
-Postman / Lead Source
+Lead Source / API Client
        ↓ HTTP POST
 n8n Webhook
        ↓
@@ -187,5 +194,7 @@ Contact Exists?
 Create Contact   Update Contact
       \           /
        \         /
-        Return Result
+        Return HTTP Result
+
+HubSpot API Authentication: OAuth 2.0
 ```
