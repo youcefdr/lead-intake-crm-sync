@@ -170,7 +170,7 @@ The following behaviors are not implemented in v1 and are deferred to a later ph
 | 1 | Valid new lead | Contact is created in HubSpot |
 | 2 | Missing email | Request is rejected with a validation error |
 | 3 | Invalid email format | Request is rejected with a validation error |
-| 4 | Invalid JSON payload | Request is rejected |
+| 4 | Invalid JSON payload | Request is rejected by n8n with HTTP 422 before workflow processing |
 | 5 | HubSpot API failure | HTTP 502 CRM error response is returned |
 | 6 | Existing contact with changed fields | Existing contact is updated without creating a duplicate |
 | 7 | Existing contact with empty optional fields | Existing values are preserved |
