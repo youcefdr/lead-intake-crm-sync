@@ -2,8 +2,8 @@
   "uid": "lead_intake_crm_hubspot_app_app",
   "type": "app",
   "config": {
-    "description": "An example to demonstrate how to build a private oauth app with developer projects.",
-    "name": "lead-intake-crm-hubspot-app-App",
+    "description": "HubSpot OAuth app for the Lead Intake CRM Sync integration.",
+    "name": "Lead Intake CRM Sync",
     "distribution": "private",
     "auth": {
       "type": "oauth",
@@ -25,12 +25,6 @@
       ],
       "iframe": [],
       "img": []
-    },
-    "support": {
-      "supportEmail": "support@example.com",
-      "documentationUrl": "https://example.com/docs",
-      "supportUrl": "https://example.com/support",
-      "supportPhone": "+18005555555"
     }
   }
 }
